@@ -1,0 +1,133 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 4091 >>
+stream
+1.000 1.000 1.000 rg 0 0 612 792 re f
+0.090 0.390 0.220 rg 50 750 m 55 768 76 772 89 770 c 86 754 75 743 61 745 c 56 746 52 748 50 750 c f
+0.800 0.940 0.830 RG 1.2 w 56 747 m 81 766 l S
+0.090 0.390 0.220 rg BT /F2 13 Tf 1 0 0 1 99 754 Tm (EcoFlow Campus) Tj ET
+0.340 0.420 0.370 rg BT /F2 7.5 Tf 1 0 0 1 437 755 Tm (PROJECT SUMMARY) Tj ET
+0.840 0.890 0.850 RG 1 w 50 738 m 562 738 l S
+0.840 0.890 0.850 RG 1 w 50 39 m 562 39 l S
+0.340 0.420 0.370 rg BT /F1 7.5 Tf 1 0 0 1 50 24 Tm (Prototype overview | Benchmark-data demonstration) Tj ET
+0.340 0.420 0.370 rg BT /F2 7.5 Tf 1 0 0 1 535 24 Tm (1 / 2) Tj ET
+0.120 0.200 0.160 rg BT /F2 27 Tf 1 0 0 1 50 706 Tm (From idea to prototype) Tj ET
+0.340 0.420 0.370 rg BT /F1 10.5 Tf 1 0 0 1 50 682 Tm (A concise summary of the EcoFlow Campus concept, development approach, tools, implemented) Tj ET
+0.340 0.420 0.370 rg BT /F1 10.5 Tf 1 0 0 1 50 667 Tm (features, and current evaluation.) Tj ET
+0.940 0.970 0.940 rg 0.840 0.890 0.850 RG 50 526 512 112 re B
+0.090 0.390 0.220 rg BT /F2 9 Tf 1 0 0 1 68 614 Tm (THE INITIAL IDEA) Tj ET
+0.120 0.200 0.160 rg BT /F1 11 Tf 1 0 0 1 68 594 Tm (Build a demo-ready, evidence-led resource dashboard for an eight-building campus.) Tj ET
+0.120 0.200 0.160 rg BT /F1 11 Tf 1 0 0 1 68 578 Tm (Combine electricity, water, occupancy, waste, weather, and operational records to make) Tj ET
+0.120 0.200 0.160 rg BT /F1 11 Tf 1 0 0 1 68 562 Tm (campus resource information easier to review and act on.) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.5 Tf 1 0 0 1 68 547 Tm (The concept emphasizes data quality, waste classification, short-horizon forecasting, offline) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.5 Tf 1 0 0 1 68 534 Tm (resilience, explainability, and honest reporting.) Tj ET
+0.120 0.200 0.160 rg BT /F2 16 Tf 1 0 0 1 50 498 Tm (Development process) Tj ET
+0.090 0.390 0.220 rg BT /F2 10 Tf 1 0 0 1 54 475 Tm (>) Tj ET
+0.120 0.200 0.160 rg BT /F2 10 Tf 1 0 0 1 70 475 Tm (1. Inspect the supplied data) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 460 Tm (Reviewed the seven workbook domains: buildings, calendar/weather, daily summaries, hourly readings, manual) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 447.5 Tm (logs, and labelled/unlabelled waste events.) Tj ET
+0.090 0.390 0.220 rg BT /F2 10 Tf 1 0 0 1 54 425.0 Tm (>) Tj ET
+0.120 0.200 0.160 rg BT /F2 10 Tf 1 0 0 1 70 425.0 Tm (2. Build and refine the prototype) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 410.0 Tm (Implemented the dashboard and API, tested existing data/forecast helpers, then expanded building history) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 397.5 Tm (into campus-wide dataset and date/time filters.) Tj ET
+0.090 0.390 0.220 rg BT /F2 10 Tf 1 0 0 1 54 375.0 Tm (>) Tj ET
+0.120 0.200 0.160 rg BT /F2 10 Tf 1 0 0 1 70 375.0 Tm (3. Verify and communicate accurately) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 360.0 Tm (Added focused tests, checked frontend type/build, measured the current rule classifier on a labelled) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 70 347.5 Tm (holdout, and documented limitations for the demo.) Tj ET
+0.120 0.200 0.160 rg BT /F2 16 Tf 1 0 0 1 50 198 Tm (Tools used) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.3 Tf 1 0 0 1 50 178 Tm (AI assistance: GitHub Copilot in VS Code via Copilot SDK; the underlying model/version was not recorded.) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.3 Tf 1 0 0 1 50 165 Tm (Engineering stack: React, TypeScript, Vite, Recharts, Python, FastAPI, pandas, NumPy, scikit-learn, SQLite) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.3 Tf 1 0 0 1 50 152 Tm (helpers, and pytest.) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 50 113 Tm (Human contribution: selected the campus sustainability problem, supplied the datasets and requirements, chose the) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 50 100 Tm (EcoFlow Campus name, directed feature priorities, and requested historical filtering and visible branding. AI-) Tj ET
+0.340 0.420 0.370 rg BT /F1 9.1 Tf 1 0 0 1 50 87 Tm (assisted changes were integrated and validated in the repository.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 5024 >>
+stream
+1.000 1.000 1.000 rg 0 0 612 792 re f
+0.090 0.390 0.220 rg 50 750 m 55 768 76 772 89 770 c 86 754 75 743 61 745 c 56 746 52 748 50 750 c f
+0.800 0.940 0.830 RG 1.2 w 56 747 m 81 766 l S
+0.090 0.390 0.220 rg BT /F2 13 Tf 1 0 0 1 99 754 Tm (EcoFlow Campus) Tj ET
+0.340 0.420 0.370 rg BT /F2 7.5 Tf 1 0 0 1 437 755 Tm (PROJECT SUMMARY) Tj ET
+0.840 0.890 0.850 RG 1 w 50 738 m 562 738 l S
+0.840 0.890 0.850 RG 1 w 50 39 m 562 39 l S
+0.340 0.420 0.370 rg BT /F1 7.5 Tf 1 0 0 1 50 24 Tm (Prototype overview | Benchmark-data demonstration) Tj ET
+0.340 0.420 0.370 rg BT /F2 7.5 Tf 1 0 0 1 535 24 Tm (2 / 2) Tj ET
+0.120 0.200 0.160 rg BT /F2 25 Tf 1 0 0 1 50 706 Tm (Features and final outcome) Tj ET
+0.120 0.200 0.160 rg BT /F2 15 Tf 1 0 0 1 50 672 Tm (What the prototype demonstrates) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.2 Tf 1 0 0 1 54 651 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 651 Tm (Campus overview with building cards and latest available electricity, water, and footfall readings.) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.2 Tf 1 0 0 1 54 635.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 635.5 Tm (Building detail with resource selection, a 6/12-hour baseline forecast panel, and observed hourly history) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 623.0 Tm (chart/table with resource and date/time filters.) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.2 Tf 1 0 0 1 54 607.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 607.5 Tm (Campus-wide History page with dataset, metric, building, and date/time filters for hourly streams, daily) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 595.0 Tm (summaries, calendar/weather, labelled and unlabelled waste events, and manual logs.) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.2 Tf 1 0 0 1 54 579.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 579.5 Tm (Waste classifier screen showing rule-based predictions from unlabelled test events; it does not report) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 567.0 Tm (accuracy for that unlabelled file.) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.2 Tf 1 0 0 1 54 551.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 551.5 Tm (Data audit artifacts, ingestion/normalization helpers, edge-buffer and reconciliation helpers, and a) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.2 Tf 1 0 0 1 68 539.0 Tm (documented demo flow.) Tj ET
+0.120 0.200 0.160 rg BT /F2 15 Tf 1 0 0 1 50 520.5 Tm (Measured classifier result) Tj ET
+0.940 0.970 0.940 rg 0.840 0.890 0.850 RG 50 433.5 512 67 re B
+0.090 0.390 0.220 rg BT /F2 28 Tf 1 0 0 1 68 473.5 Tm (88.2%) Tj ET
+0.120 0.200 0.160 rg BT /F2 9.4 Tf 1 0 0 1 190 482.5 Tm (accuracy on a stratified 20% holdout \(1,263 records\)) Tj ET
+0.120 0.200 0.160 rg BT /F1 9.1 Tf 1 0 0 1 190 464.5 Tm (Macro F1 76.3%  |  balanced accuracy 76.4%) Tj ET
+0.660 0.250 0.180 rg BT /F2 9.1 Tf 1 0 0 1 190 447.5 Tm (E-waste recall only 10.0% \(7 of 70 holdout cases\)) Tj ET
+0.340 0.420 0.370 rg BT /F1 8.8 Tf 1 0 0 1 50 412.5 Tm (This evaluates the existing sensor-threshold rules on labelled benchmark training data; it is not an independent real-) Tj ET
+0.340 0.420 0.370 rg BT /F1 8.8 Tf 1 0 0 1 50 400.5 Tm (world test or an ML-model result. The separate test dataset has no labels.) Tj ET
+0.120 0.200 0.160 rg BT /F2 15 Tf 1 0 0 1 50 371.5 Tm (Outcome and limitations) Tj ET
+0.090 0.390 0.220 rg BT /F2 8.9 Tf 1 0 0 1 54 349.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 349.5 Tm (Validation at this snapshot: 66 Python tests passed, 2 skipped; frontend typecheck and production build passed.) Tj ET
+0.090 0.390 0.220 rg BT /F2 8.9 Tf 1 0 0 1 54 334.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 334.5 Tm (The forecast endpoint uses a recent-history baseline rather than a trained forecasting model. Waste) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 322.5 Tm (classification in the app is heuristic, not the trained model pipeline.) Tj ET
+0.090 0.390 0.220 rg BT /F2 8.9 Tf 1 0 0 1 54 307.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 307.5 Tm (The supplied data is synthetic/hypothetical benchmark data, not live campus telemetry. Treat readings and) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 295.5 Tm (results as prototype demonstrations.) Tj ET
+0.090 0.390 0.220 rg BT /F2 8.9 Tf 1 0 0 1 54 280.5 Tm (- ) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 280.5 Tm (Anomaly, incentive, connectivity, data-quality, and cost/scale capabilities are not all fully connected to the) Tj ET
+0.120 0.200 0.160 rg BT /F1 8.9 Tf 1 0 0 1 68 268.5 Tm (interface; do not present placeholders as measured outcomes.) Tj ET
+0.910 0.960 0.920 rg 0.840 0.890 0.850 RG 50 74 512 50 re B
+0.090 0.390 0.220 rg BT /F2 9.1 Tf 1 0 0 1 64 105 Tm (Final outcome: a working, locally runnable campus-data prototype with interactive history and transparent) Tj ET
+0.090 0.390 0.220 rg BT /F2 9.1 Tf 1 0 0 1 64 93 Tm (evaluation, plus a clear roadmap for model integration and operational validation.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000127 00000 n 
+0000000224 00000 n 
+0000000326 00000 n 
+0000004469 00000 n 
+0000004605 00000 n 
+0000009681 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R /Info << /Title (EcoFlow Campus Project Summary) /Author (EcoFlow Campus Team) >> >>
+startxref
+9817
+%%EOF

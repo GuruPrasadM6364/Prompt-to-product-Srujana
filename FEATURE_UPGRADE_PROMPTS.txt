@@ -1,0 +1,17 @@
+EcoFlow Campus — Feature and Product Upgrade Prompts
+
+The following are the user's prompts requesting or exploring product improvements and additional features. Wording is preserved from the conversation.
+
+1. what can i addd more for this plm statement. to make it unique, make sure you follow all the datasets i sent, 7 in total
+
+2. this contains all dataset, plm tatement, what all to do, prepREE A CHECKLIST AND CHECK WETHER ALL IS DONE AND SUGGES ADDITIONAL FEATURES
+
+3. make it complete
+
+4. add feature to see historical data with date and time formthe file
+
+5. also add histroy of all this in a filter type wherever nessecary
+
+6. change names from circular grid to ecoflow campus
+
+7. add a green leaf logo after eco flow campus make it visible
