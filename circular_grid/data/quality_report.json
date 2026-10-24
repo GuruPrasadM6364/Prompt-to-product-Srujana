@@ -1,0 +1,122 @@
+{
+  "facts": [
+    {
+      "fact": "buildings_row_count",
+      "expected": "8",
+      "actual": "8",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "fact": "solar_buildings",
+      "expected": "{'B07', 'B04', 'B01'}",
+      "actual": "{'B07', 'B04', 'B01'}",
+      "status": "PASS",
+      "note": "checked presence"
+    },
+    {
+      "fact": "hourly_streams_total_rows",
+      "expected": ">=100",
+      "actual": "23192",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "fact": "duplicate_timestamp_building_pairs",
+      "expected": ">=184",
+      "actual": "184",
+      "status": "PASS",
+      "note": "found 184 extra rows (keep=first)"
+    },
+    {
+      "fact": "hourly_streams_missing_approx_69_per_col",
+      "expected": "~69 per col",
+      "actual": "{'electricity_kwh': 69, 'water_litres': 69, 'solar_generation_kwh': 0, 'footfall': 69}",
+      "status": "PASS",
+      "note": "see stats"
+    },
+    {
+      "fact": "daily_summary_rows",
+      "expected": "960",
+      "actual": "960",
+      "status": "PASS",
+      "note": "actual=960"
+    },
+    {
+      "fact": "manual_logs_alias_count",
+      "expected": "~38 spellings",
+      "actual": "37",
+      "status": "PASS",
+      "note": "found 37 unique values: ['Eng Labs', 'BH', 'B03', 'Food Court', 'Engineering Labs & Innovation Centre', 'Central Library', 'block A', 'central lib', 'B05', 'Academic Block B']..."
+    },
+    {
+      "fact": "calendar_rows",
+      "expected": "120",
+      "actual": "120",
+      "status": "PASS",
+      "note": "actual=120"
+    },
+    {
+      "fact": "calendar_day_types",
+      "expected": "{'holiday', 'exam', 'working', 'weekend', 'semester_break'}",
+      "actual": "{'holiday', 'working', 'weekend', 'semester_break', 'exam'}",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "fact": "calendar_events_approx_47",
+      "expected": "~47 distinct",
+      "actual": "47",
+      "status": "PASS",
+      "note": "found 47"
+    }
+  ],
+  "stats": {
+    "hourly_duplicates_removed": 184,
+    "hourly_missing_electricity_kwh": 69,
+    "hourly_missing_water_litres": 69,
+    "hourly_missing_solar_generation_kwh": 0,
+    "hourly_missing_footfall": 69,
+    "daily_missing_occupancy_avg": 5,
+    "daily_missing_electricity_kwh": 11,
+    "daily_missing_water_litres": 11,
+    "daily_missing_wet_organic_kg": 9,
+    "manual_logs_unique_aliases": 37,
+    "manual_logs_unresolved_aliases": 0,
+    "calendar_distinct_events": 47,
+    "hourly_imputed_per_building_col": {
+      "B01_electricity_kwh": 6,
+      "B01_water_litres": 6,
+      "B01_solar_generation_kwh": 0,
+      "B01_footfall": 9,
+      "B02_electricity_kwh": 11,
+      "B02_water_litres": 15,
+      "B02_solar_generation_kwh": 0,
+      "B02_footfall": 5,
+      "B03_electricity_kwh": 6,
+      "B03_water_litres": 9,
+      "B03_solar_generation_kwh": 0,
+      "B03_footfall": 12,
+      "B04_electricity_kwh": 9,
+      "B04_water_litres": 5,
+      "B04_solar_generation_kwh": 0,
+      "B04_footfall": 7,
+      "B05_electricity_kwh": 6,
+      "B05_water_litres": 11,
+      "B05_solar_generation_kwh": 0,
+      "B05_footfall": 12,
+      "B06_electricity_kwh": 10,
+      "B06_water_litres": 8,
+      "B06_solar_generation_kwh": 0,
+      "B06_footfall": 9,
+      "B07_electricity_kwh": 12,
+      "B07_water_litres": 5,
+      "B07_solar_generation_kwh": 0,
+      "B07_footfall": 8,
+      "B08_electricity_kwh": 9,
+      "B08_water_litres": 9,
+      "B08_solar_generation_kwh": 0,
+      "B08_footfall": 4
+    }
+  }
+}
