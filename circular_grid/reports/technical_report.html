@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Circular Grid - Technical Report</title>
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9ecef; color: #20252b; font: 10.2pt/1.35 Arial, sans-serif; }
+    .page {
+      width: 210mm; height: 297mm; padding: 17mm 18mm 15mm;
+      margin: 0 auto 8mm; background: white; position: relative;
+      page-break-after: always; overflow: hidden;
+    }
+    .page:last-child { page-break-after: auto; }
+    h1 { color: #1a6e3c; font-size: 24pt; margin: 0 0 4mm; }
+    h2 { color: #1a6e3c; font-size: 15pt; border-bottom: 1px solid #b8d5c1; padding-bottom: 1.5mm; margin: 5mm 0 2.5mm; }
+    h3 { color: #265c3a; font-size: 11.5pt; margin: 3mm 0 1mm; }
+    p { margin: 0 0 2.2mm; }
+    ul { margin: 1mm 0 3mm 5mm; padding-left: 4mm; }
+    li { margin: 1mm 0; }
+    .subtitle { color: #56616b; font-size: 12pt; margin-bottom: 6mm; }
+    .meta { border-left: 4px solid #1a6e3c; background: #f2f8f4; padding: 3mm 4mm; margin: 4mm 0; }
+    .flow { display: flex; align-items: stretch; gap: 2mm; margin: 4mm 0; }
+    .box { flex: 1; border: 1px solid #9fc5aa; background: #f4faf6; padding: 3mm; text-align: center; }
+    .arrow { align-self: center; color: #1a6e3c; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.2pt; }
+    th { color: white; background: #1a6e3c; text-align: left; }
+    th, td { border: 1px solid #cbd5ce; padding: 1.8mm 2mm; vertical-align: top; }
+    tr:nth-child(even) { background: #f6f9f7; }
+    code { font-family: Consolas, monospace; font-size: 9pt; color: #164e2d; }
+    .note { background: #fff8e6; border-left: 4px solid #d6a21c; padding: 2.5mm 3mm; margin: 3mm 0; }
+    .footer { position: absolute; bottom: 7mm; left: 18mm; right: 18mm; color: #68737b; border-top: 1px solid #d8dfda; padding-top: 2mm; font-size: 8.5pt; }
+    .small { font-size: 9pt; color: #56616b; }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <h1>Circular Grid</h1>
+    <div class="subtitle">Technical Report: System Architecture and Data Handling</div>
+    <div class="meta"><b>Scope.</b> This report describes the implemented local dashboard system, its service boundaries, data flow, storage conventions, transformation rules, and operational limitations. It is based on the repository configuration, API, scripts, and frontend contract.</div>
+
+    <h2>1. System purpose</h2>
+    <p>Circular Grid is a campus resource dashboard for eight buildings. It combines hourly electricity, water, and footfall streams with waste-event data. The user-facing product exposes campus overview, building forecasts, waste allocation, classifier activity, connectivity, data-quality, leaderboard, and cost/scale views.</p>
+    <p>The current deployment is intentionally lightweight: the API reads prepared CSV files directly rather than requiring a database or external cloud service. This keeps local demonstration and replay simple while preserving clear seams for later model and storage integration.</p>
+
+    <h2>2. Logical architecture</h2>
+    <div class="flow">
+      <div class="box"><b>Source data</b><br>CSV / audited workbook conversions<br>Waste train/test feeds</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>Python data layer</b><br>pandas readers<br>cleaning, rules, caches</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>FastAPI service</b><br>Typed request models<br>JSON endpoints on :8000</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>React dashboard</b><br>Vite frontend<br>typed fetch client</div>
+    </div>
+    <p>Supporting modules sit beside the API rather than inside a distributed runtime: ingestion/audit handles source validation; edge buffering and reconciliation model intermittent connectivity; forecasting and anomaly modules provide analytical building blocks; classifier training evaluates waste models. The API currently contains the production-facing read path and a deterministic rule classifier.</p>
+
+    <h2>3. Runtime components</h2>
+    <table>
+      <tr><th>Component</th><th>Responsibility</th><th>Boundary</th></tr>
+      <tr><td>FastAPI + Uvicorn</td><td>HTTP routing, CORS, validation, status/error responses</td><td><code>src/api/main.py</code></td></tr>
+      <tr><td>pandas data access</td><td>Read, normalize, filter, aggregate CSV data</td><td><code>data/*.csv</code></td></tr>
+      <tr><td>React/Vite</td><td>Dashboard pages and typed API consumption</td><td><code>frontend/src</code></td></tr>
+      <tr><td>Configuration</td><td>Paths, building metadata, units, thresholds, horizons</td><td><code>config.py</code></td></tr>
+    </table>
+    <div class="note"><b>Deployment profile:</b> the documented local run binds the API to localhost:8000 and the frontend dev server to localhost:5173. CORS is restricted to those two frontend origins.</div>
+
+    <div class="footer">Circular Grid Technical Report · Page 1 of 3</div>
+  </section>
+
+  <section class="page">
+    <h2>4. Data sources and lifecycle</h2>
+    <p>Configuration separates immutable raw workbooks from derived data. The upload directory is controlled by <code>CIRCULAR_GRID_UPLOAD_DIR</code>; configured workbook names are mapped to canonical datasets for buildings, calendar, daily summary, hourly streams, and manual logs. The data workflow converts and audits supplied workbooks, while the explicit demo-data target generates synthetic waste events only when requested.</p>
+    <div class="flow">
+      <div class="box"><b>Acquire</b><br>Raw workbooks or demo waste events</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>Convert / audit</b><br>Canonical CSVs and quality reports</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>Serve</b><br>Cached DataFrames and JSON responses</div>
+      <div class="arrow">→</div>
+      <div class="box"><b>Present</b><br>Typed dashboard views</div>
+    </div>
+
+    <h2>5. Canonical data handling</h2>
+    <table>
+      <tr><th>Dataset</th><th>Use</th><th>Handling in API</th></tr>
+      <tr><td><code>hourly_streams_clean.csv</code> (fallback: hourly_streams.csv)</td><td>Building time series</td><td>Column names are lower-cased; timestamp is selected from <code>sampled_hour</code> or <code>timestamp</code>; invalid timestamps are dropped; rows are sorted.</td></tr>
+      <tr><td><code>waste_events_train.csv</code></td><td>Waste allocation</td><td>Weight is coerced to numeric, missing values become zero, then grams are converted to kilograms.</td></tr>
+      <tr><td><code>waste_events_test.csv</code></td><td>Classifier feed</td><td>First 50 events are classified by sensor-rule inference; this unlabeled feed is not an accuracy evaluation.</td></tr>
+      <tr><td><code>models/classifier_results.json</code></td><td>Optional model metrics</td><td>Loaded when present; otherwise the API returns an explicit rule-based model entry with zero evaluation metrics.</td></tr>
+    </table>
+    <p>Required-file failures are surfaced as HTTP 503 responses. Unknown buildings, streams, and forecast horizons are rejected with 404 or 400 responses. Data values pass through a numeric safety helper that converts missing or non-finite values to zero at response boundaries.</p>
+
+    <h2>6. Transformations and business rules</h2>
+    <ul>
+      <li><b>Building overview:</b> the API takes the latest 24 rows per building, exposes current electricity/water/footfall, and emits an electricity sparkline. A building is online when its last timestamp is within two hours of the dataset latest timestamp; otherwise it is stale.</li>
+      <li><b>Forecast response:</b> recent history is returned as actual values. Future values use the latest 24-hour mean, with lower and upper bounds at 80% and 120% of the baseline.</li>
+      <li><b>Waste allocation:</b> events are grouped by building and class. Organic waste uses the configured 4:1 compost ratio; recyclable classes are separated from landfill; diversion is the non-landfill share.</li>
+      <li><b>Classification:</b> moisture, metal signal, transparency, acoustic hardness, and weight drive deterministic class rules with fixed confidence values. Missing sensor values are normalized before inference.</li>
+    </ul>
+
+    <h2>7. Data quality and reproducibility</h2>
+    <p>Configuration centralizes units, date bounds, building identifiers, thresholds, and random seed. The pipeline can therefore be replayed with the same settings. The frontend types document response shape and estimated/status semantics, reducing drift between API and UI.</p>
+    <div class="footer">Circular Grid Technical Report · Page 2 of 3</div>
+  </section>
+
+  <section class="page">
+    <h2>8. API and presentation contract</h2>
+    <p>The frontend uses a single typed client with <code>/api</code> as its base path. GET requests cover campus overview, building forecast, anomalies, waste allocation, classifier feed, connectivity, data quality, leaderboard, and cost/scale. A POST endpoint accepts classifier sensor values and returns predicted class, confidence, and measured inference latency.</p>
+    <table>
+      <tr><th>Surface</th><th>Data contract</th><th>Operational meaning</th></tr>
+      <tr><td>Overview</td><td>Buildings, status, current metrics, sparkline</td><td>Latest campus state and freshness</td></tr>
+      <tr><td>Forecast</td><td>Actual/forecast/lower/upper series</td><td>Short-horizon planning for 6 or 12 hours</td></tr>
+      <tr><td>Waste</td><td>Generated, composted, recycled, landfill, diversion</td><td>Material flow and landfill avoidance</td></tr>
+      <tr><td>Classifier</td><td>Events, model metadata, prediction response</td><td>Segregation assistance and feed visibility</td></tr>
+      <tr><td>Connectivity/quality</td><td>Status, last seen, quality counters</td><td>Trust and operational monitoring</td></tr>
+    </table>
+
+    <h2>9. Reliability, limitations, and extension points</h2>
+    <h3>Implemented safeguards</h3>
+    <ul>
+      <li>Lazy CSV reads are cached with a one-entry cache, avoiding repeated disk parsing during a process lifetime.</li>
+      <li>Timestamp coercion, numeric coercion, missing-file errors, parameter validation, and localhost-only CORS provide explicit boundaries.</li>
+      <li>Configuration distinguishes measured source data from optional synthetic demo data. The README warns that generated waste events must not be reported as measured results.</li>
+    </ul>
+    <h3>Current limitations</h3>
+    <ul>
+      <li>Several dashboard endpoints are scaffolds: anomalies, data quality, leaderboard, and cost/scale currently return empty, zero, or fixed values rather than live analytical results.</li>
+      <li>The forecast endpoint uses a mean baseline and fixed intervals; it is a service contract, not a trained probabilistic forecast.</li>
+      <li>Connectivity is inferred from file timestamps and does not yet perform live edge reconciliation. The edge modules provide the design foundation for buffered/offline operation.</li>
+      <li>CSV storage and process-local caching are suitable for a local dashboard but do not provide transactional writes, concurrent ingestion, retention policies, or multi-user isolation.</li>
+    </ul>
+
+    <h2>10. Recommended production evolution</h2>
+    <p>Keep the current API contracts stable while replacing the file reader with a versioned storage adapter. Add schema validation and lineage IDs at ingestion, persist quality metrics instead of returning placeholders, and move forecasts/classifier inference behind explicit model interfaces. For scale, use append-only event storage plus materialized hourly aggregates, background refresh, authentication, and observability for freshness, latency, missing data, and model drift.</p>
+    <div class="note"><b>Conclusion:</b> Circular Grid has a clear, testable local architecture: audited/derived files feed a typed FastAPI boundary and a React dashboard. Its strongest current property is transparent data handling; its main next step is replacing placeholder analytics and process-local CSV access with durable, observable production services.</div>
+    <div class="footer">Circular Grid Technical Report · Page 3 of 3</div>
+  </section>
+</body>
+</html>
