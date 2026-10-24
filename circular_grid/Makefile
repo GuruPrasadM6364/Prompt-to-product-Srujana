@@ -2,9 +2,9 @@
 # One-command reproducible pipeline. All targets are phased.
 # Usage: make setup | make data | make train | make test | make run
 
-PYTHON = python3
-PROJECT = C:/Users/Guru Prasad M/.gemini/antigravity/scratch/circular_grid
-FRONTEND = $(PROJECT)/frontend
+PYTHON = python
+PROJECT = .
+FRONTEND = ./frontend
 
 .PHONY: all setup data train test run clean
 
@@ -13,8 +13,7 @@ all: setup data train test
 ## ── 1. Setup: install Python packages + Node packages ─────────────────────────
 setup:
 	@echo "=== Installing Python dependencies ==="
-	pip3 install scikit-learn lightgbm fastapi uvicorn openpyxl pytest \
-		python-multipart onnxruntime skl2onnx rapidfuzz duckdb
+	$(PYTHON) -m pip install -r requirements.txt
 	@echo "=== Setting up Node/frontend ==="
 	cd $(FRONTEND) && npm install
 	@echo "=== Building frontend ==="
@@ -23,9 +22,8 @@ setup:
 
 ## ── 2. Data: convert xlsx, generate waste events, run audit ──────────────────
 data:
-	@echo "=== Phase 1: Data audit and ingestion ==="
+	@echo "=== Generating waste event datasets ==="
 	cd $(PROJECT) && $(PYTHON) scripts/generate_waste_events.py
-	cd $(PROJECT) && $(PYTHON) -c "from src.ingestion.audit import run_audit; run_audit()"
 	@echo "=== Data phase complete. Reports in data/ ==="
 
 ## ── 3. Train: classifier + forecasting models ────────────────────────────────

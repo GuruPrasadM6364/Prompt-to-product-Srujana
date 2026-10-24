@@ -192,7 +192,7 @@ def _generate(counts: dict, include_label: bool, id_prefix: str) -> pd.DataFrame
 
 
 def main() -> None:
-    print("Generating waste events …")
+    print("Generating waste events...")
 
     # Train
     train_df = _generate(TRAIN_COUNTS, include_label=True, id_prefix="TRN")
@@ -204,7 +204,7 @@ def main() -> None:
 
     train_path = DATA_DIR / "waste_events_train.csv"
     train_df.to_csv(train_path, index=False)
-    print(f"  ✓ waste_events_train.csv  ({len(train_df)} rows)  → {train_path}")
+    print(f"  waste_events_train.csv  ({len(train_df)} rows) -> {train_path}")
     print(f"    Class breakdown:\n{class_counts.to_string()}")
 
     # Test (no labels)
@@ -214,7 +214,7 @@ def main() -> None:
 
     test_path = DATA_DIR / "waste_events_test.csv"
     test_df.to_csv(test_path, index=False)
-    print(f"  ✓ waste_events_test.csv   ({len(test_df)} rows)  → {test_path}")
+    print(f"  waste_events_test.csv   ({len(test_df)} rows) -> {test_path}")
 
     # NaN rate check
     sensor_cols = ["weight_g", "moisture_pct", "metal_signal", "transparency", "acoustic_hardness"]
