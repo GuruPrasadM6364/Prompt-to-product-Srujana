@@ -152,27 +152,37 @@ class TestOutageReplay:
                     "electricity_kwh": float(rng.integers(10, 200)),
                     "water_litres": float(rng.integers(100, 2000)),
                     "sequence_num": hour * 8 + ALL_BUILDINGS.index(bid),
+                    "device_id": f"meter-{bid}",
                 })
-        return pd.DataFrame(rows)
+        return [
+            {
+                "building_id": row["building_id"],
+                "sequence_num": row["sequence_num"],
+                "device_id": row["device_id"],
+                "sample_timestamp": row["sampled_hour"].isoformat(),
+                "kwh": row["electricity_kwh"],
+                "water_litres": row["water_litres"],
+                "footfall": None,
+            }
+            for row in rows
+        ]
 
     def test_outage_replay_totals_match(self):
         """Campus totals after replay must equal no-outage totals."""
         from src.edge.reconciliation import replay_outage_simulation
 
         df_normal = self._make_hourly_data()
-        normal_elec  = df_normal["electricity_kwh"].sum()
-        normal_water = df_normal["water_litres"].sum()
+        normal_elec  = sum(row["kwh"] for row in df_normal)
+        normal_water = sum(row["water_litres"] for row in df_normal)
 
         result = replay_outage_simulation(df_normal, ["B03", "B07"], 6)
-        assert "campus_electricity_kwh" in result
-        assert "campus_water_litres" in result
-
-        assert abs(result["campus_electricity_kwh"] - normal_elec) < 1e-6, (
-            f"Electricity totals differ: {result['campus_electricity_kwh']} vs {normal_elec}"
+        assert abs(result["final_kwh"] - normal_elec) < 1e-6, (
+            f"Electricity totals differ: {result['final_kwh']} vs {normal_elec}"
         )
-        assert abs(result["campus_water_litres"] - normal_water) < 1e-6, (
-            f"Water totals differ: {result['campus_water_litres']} vs {normal_water}"
+        assert abs(result["final_water"] - normal_water) < 1e-6, (
+            f"Water totals differ: {result['final_water']} vs {normal_water}"
         )
+        assert result["double_counting_detected"] is False
 
     def test_no_double_counting(self):
         """After reconciliation, each (sampled_hour, building_id) appears once."""
@@ -180,21 +190,21 @@ class TestOutageReplay:
 
         df = self._make_hourly_data()
         result = replay_outage_simulation(df, ["B03"], 3)
-        final_df = result.get("final_df")
-        if final_df is not None:
-            dupes = final_df.duplicated(["sampled_hour", "building_id"]).sum()
-            assert dupes == 0, f"Double-counted rows: {dupes}"
+        assert result["double_counting_detected"] is False
+        assert result["final_kwh"] == pytest.approx(result["baseline_kwh"])
 
-    def test_building_status_tracking(self):
-        """Offline buildings appear with status 'offline', not dropped."""
-        from src.edge.reconciliation import replay_outage_simulation
+    def test_building_status_tracking(self, tmp_path, monkeypatch):
+        """Known buildings remain represented when they have never reported."""
+        from datetime import datetime, timezone
+        from src.edge import reconciliation
 
-        df = self._make_hourly_data()
-        result = replay_outage_simulation(df, ["B07"], 6)
-        statuses = result.get("building_statuses", {})
-        # After recovery, B07 should be online or catching_up
-        assert "B07" in statuses
-        assert statuses["B07"] in ("online", "catching_up", "stale")
+        monkeypatch.setattr(reconciliation, "RECON_DB_PATH", tmp_path / "reconciliation.db")
+        now = datetime.now(timezone.utc)
+        reconciliation.ingest_event("B07", 1, "meter-B07", now.isoformat(), kwh=1.0)
+        statuses = reconciliation.refresh_building_statuses(
+            ["B07", "B08"], reference_time=now
+        )
+        assert statuses == {"B07": "online", "B08": "offline"}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -202,37 +212,55 @@ class TestOutageReplay:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestEdgeBuffer:
-    def test_append_only_write(self, tmp_path):
+    def test_append_only_write(self, tmp_path, monkeypatch):
         """Writes are append-only with monotonic sequence numbers."""
-        from src.edge.buffer import EdgeBuffer
-        buf = EdgeBuffer(tmp_path / "edge.db")
+        from src.edge import buffer
 
-        buf.write_event("B01", {"electricity_kwh": 10.0, "sampled_hour": "2026-09-01T10:00"})
-        buf.write_event("B01", {"electricity_kwh": 11.0, "sampled_hour": "2026-09-01T11:00"})
+        monkeypatch.setattr(buffer, "BUFFER_DIR", tmp_path)
+        building_id = f"B-{tmp_path.name}"
+        first = buffer.write_event(building_id, {
+            "device_id": "meter-1", "sample_timestamp": "2026-09-01T10:00:00+00:00",
+            "electricity_kwh": 10.0,
+        })
+        second = buffer.write_event(building_id, {
+            "device_id": "meter-1", "sample_timestamp": "2026-09-01T11:00:00+00:00",
+            "electricity_kwh": 11.0,
+        })
 
-        pending = buf.get_pending("B01", 0)
+        pending = buffer.get_pending(building_id, 0)
         assert len(pending) == 2
         seqs = [r["sequence_num"] for r in pending]
         assert seqs == sorted(seqs), "Sequence numbers not monotonic"
-        assert seqs[0] < seqs[1]
+        assert seqs == [first, second]
 
-    def test_idempotent_acknowledge(self, tmp_path):
+    def test_idempotent_acknowledge(self, tmp_path, monkeypatch):
         """Acknowledging same sequence twice has no effect."""
-        from src.edge.buffer import EdgeBuffer
-        buf = EdgeBuffer(tmp_path / "edge.db")
-        buf.write_event("B02", {"electricity_kwh": 5.0, "sampled_hour": "2026-09-01T08:00"})
-        pending_before = buf.get_pending("B02", 0)
+        from src.edge import buffer
+
+        monkeypatch.setattr(buffer, "BUFFER_DIR", tmp_path)
+        building_id = f"B-{tmp_path.name}"
+        buffer.write_event(building_id, {
+            "device_id": "meter-1", "sample_timestamp": "2026-09-01T08:00:00+00:00",
+            "electricity_kwh": 5.0,
+        })
+        pending_before = buffer.get_pending(building_id, 0)
         seq = pending_before[0]["sequence_num"]
-        buf.acknowledge("B02", seq)
-        buf.acknowledge("B02", seq)  # idempotent
-        pending_after = buf.get_pending("B02", seq)
+        assert buffer.acknowledge(building_id, seq) == 1
+        assert buffer.acknowledge(building_id, seq) == 0
+        pending_after = buffer.get_pending(building_id, 0)
         assert len(pending_after) == 0
 
-    def test_wal_mode(self, tmp_path):
+    def test_wal_mode(self, tmp_path, monkeypatch):
         """SQLite must be in WAL mode."""
-        from src.edge.buffer import EdgeBuffer
-        buf = EdgeBuffer(tmp_path / "edge.db")
-        with sqlite3.connect(tmp_path / "edge.db") as conn:
+        from src.edge import buffer
+
+        monkeypatch.setattr(buffer, "BUFFER_DIR", tmp_path)
+        building_id = f"B-{tmp_path.name}"
+        buffer.write_event(building_id, {
+            "device_id": "meter-1", "sample_timestamp": "2026-09-01T08:00:00+00:00",
+        })
+        db_path = tmp_path / f"edge_buffer_{building_id}.db"
+        with sqlite3.connect(db_path) as conn:
             journal_mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
         assert journal_mode.lower() == "wal"
 
@@ -256,44 +284,108 @@ class TestNoLeakage:
 
         for horizon in [6, 12]:
             X, y = build_features(df, "electricity_kwh", horizon)
-            X_aligned = X.drop(columns=["sampled_hour"], errors="ignore")
-            # The lag columns should shift by at least horizon
             lag_col = f"electricity_kwh_lag{horizon}"
-            if lag_col in X_aligned.columns:
-                # Find rows where we have both X and y
-                valid = X_aligned[lag_col].notna()
-                if valid.sum() > 10:
-                    # lag value should be from at least horizon steps before
-                    # Since values = 0..n-1, lag should be < current index
-                    pass  # structural check passed if column exists and is shifted
+            row = X.index[X["sampled_hour"] == ts[50]][0]
+            assert X.loc[row, lag_col] == pytest.approx(50 - horizon)
+            assert y.loc[row] == pytest.approx(50)
 
-    def test_rolling_window_no_future(self):
-        """Rolling stats in features must not include future values."""
+    def test_lag_features_do_not_cross_buildings(self):
+        """A building's lag must never use another building's readings."""
         from src.forecasting.forecast import build_features
 
-        n = 100
+        n = 48
         ts = pd.date_range("2026-07-01", periods=n, freq="h")
-        vals = np.arange(n, dtype=float)
+        df = pd.DataFrame({
+            "sampled_hour": list(ts) * 2,
+            "electricity_kwh": list(np.arange(n, dtype=float))
+                                + list(10_000 + np.arange(n, dtype=float)),
+            "building_id": ["B01"] * n + ["B02"] * n,
+        })
+        X, _ = build_features(df, "electricity_kwh", 6)
+        at_hour_24 = X["sampled_hour"] == ts[24]
+        values = X.loc[at_hour_24].set_index("building_id")["electricity_kwh_lag6"]
+        assert values["B01"] == pytest.approx(18)
+        assert values["B02"] == pytest.approx(10_018)
+
+    def test_rolling_features_use_only_prior_horizon_data(self):
+        """Rolling windows end at t-horizon and remain unchanged by future data."""
+        from src.forecasting.forecast import build_features
+
+        n = 48
+        ts = pd.date_range("2026-07-01", periods=n, freq="h")
         df = pd.DataFrame({
             "sampled_hour": ts,
-            "electricity_kwh": vals,
+            "electricity_kwh": np.arange(n, dtype=float),
             "building_id": "B01",
         })
-        X, y = build_features(df, "electricity_kwh", 6)
-        roll_col = "electricity_kwh_roll24_mean"
-        if roll_col in X.columns:
-            # Rolling mean at row i should be at most i-6 (horizon shift)
-            # Check that no rolling mean equals value at current row (which would indicate no lag)
-            aligned_y = y.values
-            roll_vals = X[roll_col].values
-            # Verify: roll_vals[i] should never match vals[i] for large i
-            # (the current value is vals[i]; rolling mean without shift would be near vals[i] for smooth series)
-            # This is a structural check — if rolling used shift(horizon) then roll_vals << vals at late indices
-            pass  # Column existence and shape are the key structural checks
+        X, _ = build_features(df, "electricity_kwh", 6)
+        row = X.index[X["sampled_hour"] == ts[30]][0]
+        assert X.loc[row, "electricity_kwh_roll24_mean"] == pytest.approx(12.5)
+
+        changed = df.copy()
+        changed.loc[changed["sampled_hour"] > ts[24], "electricity_kwh"] += 1_000
+        changed_X, _ = build_features(changed, "electricity_kwh", 6)
+        changed_row = changed_X.index[changed_X["sampled_hour"] == ts[30]][0]
+        assert changed_X.loc[changed_row, "electricity_kwh_roll24_mean"] == pytest.approx(12.5)
+
+    def test_rolling_origin_uses_direct_hour_horizon(self):
+        """Evaluation advances by distinct timestamps, not rows/buildings."""
+        from src.forecasting.forecast import rolling_origin_eval
+
+        n = 220
+        timestamps = pd.date_range("2026-07-01", periods=n, freq="h")
+        df = pd.DataFrame([
+            {
+                "sampled_hour": timestamp,
+                "building_id": building,
+                "electricity_kwh": float(index + (100 if building == "B02" else 0)),
+            }
+            for index, timestamp in enumerate(timestamps)
+            for building in ("B01", "B02")
+        ])
+
+        class MeanModel:
+            def fit(self, X, y):
+                self.mean = float(y.mean())
+                return self
+
+            def predict(self, X):
+                return np.full(len(X), self.mean)
+
+        result = rolling_origin_eval(df, "electricity_kwh", 6, MeanModel, n_origins=3)
+        assert result["n_origins_used"] == 3
+
+    def test_last_value_baseline_is_per_building(self):
+        from src.forecasting.forecast import rolling_baseline_eval
+
+        n = 220
+        timestamps = pd.date_range("2026-07-01", periods=n, freq="h")
+        df = pd.DataFrame([
+            {
+                "sampled_hour": timestamp,
+                "building_id": building,
+                "electricity_kwh": float(index + (10_000 if building == "B02" else 0)),
+            }
+            for index, timestamp in enumerate(timestamps)
+            for building in ("B01", "B02")
+        ])
+        result = rolling_baseline_eval(df, "electricity_kwh", 6, seasonal=False, n_origins=3)
+        assert result["mae"] == pytest.approx(6)
+
+    def test_feature_builder_rejects_missing_hours(self):
+        from src.forecasting.forecast import build_features
+
+        df = pd.DataFrame({
+            "sampled_hour": pd.to_datetime(["2026-07-01T00:00", "2026-07-01T02:00"]),
+            "electricity_kwh": [1.0, 2.0],
+            "building_id": ["B01", "B01"],
+        })
+        with pytest.raises(ValueError, match="continuous hourly timestamps"):
+            build_features(df, "electricity_kwh", 1)
 
     def test_time_based_holdout_no_shuffle(self):
         """Time-based holdout must keep chronological order."""
-        from src.forecasting.forecast import time_based_holdout
+        from src.classifier.train import time_based_holdout
 
         n = 200
         X = pd.DataFrame({"a": np.arange(n)})
@@ -316,10 +408,10 @@ class TestNoLeakage:
 class TestClassifierLatency:
     """p95 latency per event must be under CLASSIFIER_LATENCY_BUDGET_S."""
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture
     def service(self):
         """Load inference service if model exists."""
-        from src.classifier.train import EdgeInferenceService, FEATURE_COLS
+        from src.classifier.train import EdgeInferenceService
 
         # Find any trained model
         model_path = None
@@ -391,7 +483,8 @@ class TestCreditAntiGaming:
 
         # Award far more than the cap
         ledger.award(building_id, date, occupants, reason="segregation",
-                     raw_credits=occupants * CREDIT_CAP_PER_DAY * 10)
+                     raw_credits=occupants * CREDIT_CAP_PER_DAY * 10,
+                     meter_evidence={"verified_kwh_savings": 1.0})
 
         daily = ledger.get_daily_credits(building_id, date)
         per_occupant = daily / occupants

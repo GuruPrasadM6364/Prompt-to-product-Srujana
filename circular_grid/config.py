@@ -3,6 +3,7 @@ Circular Grid – central configuration.
 All tuneable constants live here. Edit this file only.
 """
 from pathlib import Path
+import os
 
 # ── Project root ──────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent
@@ -10,9 +11,8 @@ DATA_DIR = ROOT / "data"
 MODELS_DIR = ROOT / "models"
 REPORTS_DIR = ROOT / "reports"
 UPLOAD_DIR = Path(
-    r"C:\Users\Guru Prasad M\.gemini\antigravity\brain"
-    r"\430a98f7-876c-4d4a-9647-91604f46ab99\.user_uploaded"
-)
+    os.environ.get("CIRCULAR_GRID_UPLOAD_DIR", str(DATA_DIR / "raw"))
+).expanduser()
 
 # ── Raw file mapping (original xlsx, never edited) ────────────────────────────
 RAW_FILES = {

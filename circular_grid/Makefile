@@ -6,7 +6,7 @@ PYTHON = python
 PROJECT = .
 FRONTEND = ./frontend
 
-.PHONY: all setup data train test run clean
+.PHONY: all setup data demo-data train test run clean
 
 all: setup data train test
 
@@ -20,11 +20,17 @@ setup:
 	cd $(FRONTEND) && npm run build
 	@echo "Setup complete."
 
-## ── 2. Data: convert xlsx, generate waste events, run audit ──────────────────
+## ── 2. Data: audit and convert the supplied source workbooks ─────────────────
 data:
-	@echo "=== Generating waste event datasets ==="
+	@echo "=== Auditing supplied source workbooks ==="
+	cd $(PROJECT) && $(PYTHON) -c "from src.ingestion.audit import run_audit; run_audit()"
+	@echo "=== Data audit complete. Reports in data/ ==="
+
+## ── Explicitly synthetic data for local demos only ──────────────────────────
+demo-data:
+	@echo "=== Generating synthetic waste events for demo use only ==="
 	cd $(PROJECT) && $(PYTHON) scripts/generate_waste_events.py
-	@echo "=== Data phase complete. Reports in data/ ==="
+	@echo "Synthetic demo data generated; do not use it as measured source data."
 
 ## ── 3. Train: classifier + forecasting models ────────────────────────────────
 train:
@@ -43,7 +49,7 @@ test:
 ## ── 5. Run: start the application server ────────────────────────────────────
 run:
 	@echo "=== Starting Circular Grid server on http://localhost:8000 ==="
-	cd $(PROJECT) && $(PYTHON) -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+	cd $(PROJECT) && $(PYTHON) -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
 
 ## ── Scale test ───────────────────────────────────────────────────────────────
 scale-test:
