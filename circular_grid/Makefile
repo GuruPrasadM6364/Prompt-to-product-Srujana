@@ -1,4 +1,4 @@
-# Circular Grid – Makefile
+# EcoFlow Campus - Makefile
 # One-command reproducible pipeline. All targets are phased.
 # Usage: make setup | make data | make train | make test | make run
 
@@ -48,7 +48,7 @@ test:
 
 ## ── 5. Run: start the application server ────────────────────────────────────
 run:
-	@echo "=== Starting Circular Grid server on http://localhost:8000 ==="
+	@echo "=== Starting EcoFlow Campus server on http://localhost:8000 ==="
 	cd $(PROJECT) && $(PYTHON) -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
 
 ## ── Scale test ───────────────────────────────────────────────────────────────

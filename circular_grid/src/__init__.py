@@ -1,1 +1,1 @@
-# Circular Grid package
+# EcoFlow Campus package

@@ -2,7 +2,7 @@
 src/anomaly/detector.py
 =======================
 Anomaly detection, attribution, recommendation, and circular-waste allocation
-for the Circular Grid platform.
+for the EcoFlow Campus platform.
 
 Components
 ----------

@@ -1,5 +1,5 @@
 """
-pytest test suite for Circular Grid.
+pytest test suite for EcoFlow Campus.
 Covers:
   - Alias normalization
   - Unit conversion
@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from fastapi import HTTPException
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import (
@@ -21,6 +22,7 @@ from config import (
     DATA_DIR, MODELS_DIR, KG_PER_BAG, LITRES_PER_KL,
 )
 from src.ingestion.audit import normalize_building, convert_unit
+from src.api.main import building_history, campus_history, hourly
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -577,3 +579,91 @@ class TestDataQuality:
         from config import WASTE_CLASSES
         for cls in WASTE_CLASSES:
             assert cls in classes, f"Class '{cls}' missing from train data"
+
+
+class TestBuildingHistory:
+    def test_returns_dataset_reading_for_requested_time(self):
+        reading = hourly().loc[lambda frame: frame["building_id"].astype(str) == "B01"].iloc[0]
+        timestamp = reading["timestamp"].to_pydatetime()
+
+        result = building_history(
+            "B01",
+            stream="electricity_kwh",
+            start=timestamp,
+            end=timestamp,
+        )
+
+        assert result["start"] == timestamp.isoformat()
+        assert result["end"] == timestamp.isoformat()
+        assert len(result["points"]) == 1
+        assert result["points"][0]["value"] == pytest.approx(reading["electricity_kwh"])
+        assert result["points"][0]["ts"] == timestamp.isoformat()
+
+    def test_rejects_reversed_time_range(self):
+        start = pd.Timestamp("2026-06-21T00:00").to_pydatetime()
+        end = pd.Timestamp("2026-06-20T00:00").to_pydatetime()
+
+        with pytest.raises(HTTPException) as error:
+            building_history("B01", start=start, end=end)
+
+        assert error.value.status_code == 400
+
+
+class TestCampusHistory:
+    def test_filters_daily_summary_to_requested_building_and_date(self):
+        row = pd.read_csv(DATA_DIR / "daily_summary.csv").iloc[0]
+        timestamp = pd.Timestamp(row["date"]).to_pydatetime()
+
+        result = campus_history(
+            dataset="daily_summary",
+            metric="electricity_kwh",
+            building_id=str(row["building_id"]),
+            start=timestamp,
+            end=timestamp,
+        )
+
+        assert len(result["points"]) == 1
+        assert result["points"][0]["value"] == pytest.approx(row["electricity_kwh"])
+        assert result["points"][0]["unit"] == "kWh"
+
+    def test_includes_calendar_weather_and_event_history(self):
+        row = pd.read_csv(DATA_DIR / "calendar.csv").iloc[0]
+        timestamp = pd.Timestamp(row["date"]).to_pydatetime()
+
+        result = campus_history(
+            dataset="calendar",
+            metric="avg_temp_c",
+            start=timestamp,
+            end=timestamp,
+        )
+
+        assert len(result["points"]) == 1
+        assert result["points"][0]["building_name"] == "Campus"
+        assert result["points"][0]["value"] == pytest.approx(row["avg_temp_c"])
+        assert result["points"][0]["category"] == row["event"]
+        assert result["points"][0]["unit"] == "°C"
+
+    def test_includes_normalized_manual_log_building_and_source_unit(self):
+        row = pd.read_csv(DATA_DIR / "manual_logs.csv").iloc[0]
+        timestamp = pd.Timestamp(row["logged_at"]).to_pydatetime()
+        expected_building = normalize_building(row["building"])
+
+        result = campus_history(
+            dataset="manual_logs",
+            metric="value",
+            building_id=expected_building,
+            start=timestamp,
+            end=timestamp,
+            manual_stream=str(row["stream"]),
+        )
+
+        assert len(result["points"]) == 1
+        assert result["points"][0]["building_id"] == expected_building
+        assert result["points"][0]["value"] == pytest.approx(row["value"])
+        assert result["points"][0]["unit"] == row["unit"]
+
+    def test_rejects_metric_not_available_in_dataset(self):
+        with pytest.raises(HTTPException) as error:
+            campus_history(dataset="waste_test", metric="category")
+
+        assert error.value.status_code == 400

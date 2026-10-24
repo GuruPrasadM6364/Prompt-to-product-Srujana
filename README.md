@@ -1,6 +1,6 @@
-# Circular Grid
+# EcoFlow Campus
 
-Circular Grid is a campus resource dashboard backed by the hourly campus
+EcoFlow Campus is a campus resource dashboard backed by the hourly campus
 streams and waste-event datasets.
 
 ## Run locally
@@ -42,3 +42,11 @@ unlabeled, so its predictions must not be presented as accuracy measurements.
 
 The frontend production build can be checked with `npm run build` from
 `circular_grid/frontend`.
+
+The History page provides campus-wide filters for building, date/time range,
+dataset, and metric. It covers hourly readings, daily summaries, calendar and
+weather records, labelled and unlabelled waste events, and manual meter logs.
+Values and units come from the selected source dataset; hourly imputed readings
+are identified and missing values remain blank. Building details also include
+a historical-readings view for individual hourly resource streams. Static
+building metadata has no timestamped history to filter.

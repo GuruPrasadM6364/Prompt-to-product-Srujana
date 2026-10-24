@@ -1,0 +1,38 @@
+EcoFlow Campus — Screen-Recording Demo
+Target runtime: about 2 minutes 50 seconds
+
+Recording notes
+- Keep the browser at a readable zoom and move the pointer deliberately.
+- Show the app running locally with the supplied project datasets loaded.
+- Narration is in quotation marks. Bracketed text is an on-screen action, not narration.
+- Do not imply that the benchmark datasets are live campus telemetry.
+
+0:00–0:18 | Opening and campus overview
+[Start on Campus Overview. Keep the EcoFlow Campus name and green leaf visible.]
+"Welcome to EcoFlow Campus, a campus resource dashboard for exploring building-level resource use and related sustainability data. The green leaf reflects the product’s focus on more mindful campus operations. This demonstration uses the supplied benchmark datasets, not live sensor connections."
+
+0:18–0:42 | Overview cards and building selection
+[Point to the building count, online count, electricity and water totals. Scroll through the building cards, then open one building.]
+"The overview summarizes the buildings and their latest recorded electricity, water, and footfall readings. Building status is based on the timestamps in the dataset, so it should not be interpreted as a live connectivity guarantee. Select any building to inspect its resource details."
+
+0:42–1:14 | Building detail and hourly history
+[On the building page, change the resource and forecast horizon. Then use Historical readings: choose a stream, set a date/time range, and select Show history. Point out the chart and table.]
+"For a building, choose electricity, water, or footfall and a six- or twelve-hour horizon to view the forecast panel. Important context: the current forecast is a simple recent-history baseline, not a trained predictive model. Below it, Historical readings lets us choose a resource and date/time range. The chart and table show hourly source readings, identify imputed records, and leave missing values blank."
+
+1:14–2:20 | Campus-wide History filters
+[Click History. Show the dataset menu, metric menu, building filter, and date/time controls. Briefly switch datasets and point out the additional filters for waste category or manual-log stream. Apply one filter and show chart/table.]
+"The History page brings timestamped records together across the available datasets. Choose hourly readings, daily summaries, calendar and weather, labelled or unlabelled waste events, or manual meter logs. Then filter by metric, building where applicable, and date/time. Waste categories and manual-log streams have their own filters. The chart groups records with matching timestamps for readability; the table keeps individual records and their source units. Calendar data is campus-wide, while manual logs retain their original units."
+
+2:20–2:43 | Waste classifier
+[Click Waste classifier. Point to event, building, predicted category, and confidence.]
+"The Waste classifier page shows sample events from the unlabelled test file with a predicted category and confidence. These are rule-based predictions using sensor thresholds, not a trained classifier result. Because the test file has no labels, this screen does not claim measured accuracy."
+
+2:43–2:55 | Closing
+[Return to Campus Overview and pause briefly on the brand.]
+"EcoFlow Campus makes the provided resource, weather, and waste records easier to explore, compare, and review over time. Thank you for watching."
+
+Presenter accuracy reminders
+- The supplied data is a benchmark dataset; do not describe it as live telemetry.
+- Forecast values are baseline-based estimates, not trained model predictions.
+- Waste event predictions are heuristic and the test data is unlabelled; do not claim accuracy.
+- Status is inferred from the latest available dataset timestamps.

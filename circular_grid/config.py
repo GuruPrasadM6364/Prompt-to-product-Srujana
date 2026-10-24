@@ -1,5 +1,5 @@
 """
-Circular Grid – central configuration.
+EcoFlow Campus - central configuration.
 All tuneable constants live here. Edit this file only.
 """
 from pathlib import Path
@@ -83,6 +83,6 @@ OUTAGE_BUILDINGS         = ["B03", "B07"]   # for replay test
 OUTAGE_DURATION_HOURS    = 6
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
-APP_TITLE           = "Circular Grid"
+APP_TITLE           = "EcoFlow Campus"
 PRIMARY_COLOR       = "#1a6e3c"         # single primary, not purple
 DASHBOARD_PORT      = 8000

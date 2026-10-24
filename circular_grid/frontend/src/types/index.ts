@@ -1,5 +1,5 @@
 // ============================================================
-// Circular Grid - API TypeScript Interfaces
+// EcoFlow Campus - API TypeScript Interfaces
 // ============================================================
 
 // ── Campus Overview ──────────────────────────────────────
@@ -55,6 +55,54 @@ export interface BuildingForecastResponse {
   horizon: ForecastHorizon;
   series: ForecastPoint[];
   calendar_events: CalendarEvent[];
+}
+
+export interface BuildingHistoryPoint {
+  ts: string;
+  value: number | null;
+  imputed: boolean;
+  source: string;
+}
+
+export interface BuildingHistoryResponse {
+  building_id: string;
+  building_name: string;
+  stream: ForecastStream | 'solar_generation_kwh';
+  available_start: string | null;
+  available_end: string | null;
+  start: string | null;
+  end: string | null;
+  points: BuildingHistoryPoint[];
+}
+
+export type HistoryDataset =
+  | 'hourly'
+  | 'daily_summary'
+  | 'calendar'
+  | 'waste_train'
+  | 'waste_test'
+  | 'manual_logs';
+
+export interface CampusHistoryPoint {
+  ts: string;
+  building_id: string | null;
+  building_name: string;
+  value: number | null;
+  unit: string;
+  category: string | null;
+  source: string;
+  imputed: boolean;
+}
+
+export interface CampusHistoryResponse {
+  dataset: HistoryDataset;
+  metric: string;
+  building_id: string;
+  available_start: string | null;
+  available_end: string | null;
+  start: string | null;
+  end: string | null;
+  points: CampusHistoryPoint[];
 }
 
 // ── Anomalies ─────────────────────────────────────────────

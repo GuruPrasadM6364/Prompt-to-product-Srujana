@@ -1,4 +1,4 @@
-"""HTTP API for the Circular Grid dashboard.
+"""HTTP API for the EcoFlow Campus dashboard.
 
 The API reads the generated CSV data directly, so the dashboard can run before
 the optional model-training phase has completed.
@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -25,9 +26,10 @@ from config import (
     DATA_DIR,
     WASTE_CLASSES,
 )
+from src.ingestion.audit import normalize_building
 
 ROOT = Path(__file__).resolve().parents[2]
-app = FastAPI(title="Circular Grid API", version="1.0.0")
+app = FastAPI(title="EcoFlow Campus API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -61,6 +63,21 @@ def waste_train() -> pd.DataFrame:
 @lru_cache(maxsize=1)
 def waste_test() -> pd.DataFrame:
     return _read_csv("waste_events_test.csv")
+
+
+@lru_cache(maxsize=1)
+def daily_summary() -> pd.DataFrame:
+    return _read_csv("daily_summary.csv")
+
+
+@lru_cache(maxsize=1)
+def campus_calendar() -> pd.DataFrame:
+    return _read_csv("calendar.csv")
+
+
+@lru_cache(maxsize=1)
+def manual_logs() -> pd.DataFrame:
+    return _read_csv("manual_logs.csv")
 
 
 def _number(value: Any) -> float:
@@ -103,6 +120,232 @@ def health() -> dict[str, str]:
 @app.get("/api/campus/overview")
 def campus_overview() -> dict[str, Any]:
     return {"updated_at": hourly()["timestamp"].max().isoformat(), "buildings": _building_rows()}
+
+
+@app.get("/api/building/{building_id}/history")
+def building_history(
+    building_id: str,
+    stream: str = "electricity_kwh",
+    start: datetime | None = None,
+    end: datetime | None = None,
+) -> dict[str, Any]:
+    if building_id not in BUILDING_NAMES:
+        raise HTTPException(status_code=404, detail="Unknown building")
+    if stream not in {"electricity_kwh", "water_litres", "solar_generation_kwh", "footfall"}:
+        raise HTTPException(status_code=400, detail="Unsupported stream")
+    if start and start.tzinfo is not None or end and end.tzinfo is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Use campus-local date and time without a timezone offset",
+        )
+    if start and end and start > end:
+        raise HTTPException(status_code=400, detail="Start date and time must be before the end")
+
+    part = hourly()
+    part = part[part["building_id"].astype(str) == building_id].copy()
+    if part.empty:
+        return {
+            "building_id": building_id,
+            "building_name": BUILDING_NAMES[building_id],
+            "stream": stream,
+            "available_start": None,
+            "available_end": None,
+            "start": start.isoformat() if start else None,
+            "end": end.isoformat() if end else None,
+            "points": [],
+        }
+
+    available_start = part["timestamp"].min()
+    available_end = part["timestamp"].max()
+    range_end = pd.Timestamp(end) if end else available_end
+    range_start = pd.Timestamp(start) if start else range_end - pd.Timedelta(hours=24)
+    filtered = part[part["timestamp"].between(range_start, range_end, inclusive="both")]
+
+    points = []
+    for _, row in filtered.iterrows():
+        raw_value = pd.to_numeric(row.get(stream), errors="coerce")
+        value = float(raw_value) if pd.notna(raw_value) and math.isfinite(float(raw_value)) else None
+        points.append({
+            "ts": row["timestamp"].isoformat(),
+            "value": value,
+            "imputed": bool(row.get("imputed", False)),
+            "source": str(row.get("source", "hourly_meter")),
+        })
+
+    return {
+        "building_id": building_id,
+        "building_name": BUILDING_NAMES[building_id],
+        "stream": stream,
+        "available_start": available_start.isoformat(),
+        "available_end": available_end.isoformat(),
+        "start": range_start.isoformat(),
+        "end": range_end.isoformat(),
+        "points": points,
+    }
+
+
+@app.get("/api/campus/history")
+def campus_history(
+    dataset: str = "hourly",
+    metric: str = "electricity_kwh",
+    building_id: str = "all",
+    start: datetime | None = None,
+    end: datetime | None = None,
+    category: str | None = None,
+    manual_stream: str | None = None,
+) -> dict[str, Any]:
+    dataset_metrics = {
+        "hourly": {"electricity_kwh", "water_litres", "solar_generation_kwh", "footfall"},
+        "daily_summary": {
+            "occupancy_avg", "electricity_kwh", "water_litres", "solar_generation_kwh",
+            "wet_organic_kg", "dry_recyclable_kg", "ewaste_kg", "hazardous_kg",
+            "composted_kg", "recycled_kg", "contamination_pct", "landfill_kg",
+        },
+        "calendar": {"avg_temp_c", "rainfall_mm", "humidity_pct"},
+        "waste_train": {"weight_g"},
+        "waste_test": {"weight_g"},
+        "manual_logs": {"value"},
+    }
+    if dataset not in dataset_metrics:
+        raise HTTPException(status_code=400, detail="Unsupported history dataset")
+    if metric not in dataset_metrics[dataset]:
+        raise HTTPException(status_code=400, detail="Unsupported metric for history dataset")
+    if building_id != "all" and building_id not in BUILDING_NAMES:
+        raise HTTPException(status_code=404, detail="Unknown building")
+    if dataset == "calendar" and building_id != "all":
+        raise HTTPException(status_code=400, detail="Calendar and weather records are campus-wide")
+    if (start and start.tzinfo is not None) or (end and end.tzinfo is not None):
+        raise HTTPException(
+            status_code=400,
+            detail="Use campus-local date and time without a timezone offset",
+        )
+    if start and end and start > end:
+        raise HTTPException(status_code=400, detail="Start date and time must be before the end")
+
+    if dataset == "hourly":
+        frame = hourly().copy()
+        frame["history_timestamp"] = frame["timestamp"]
+        frame["history_building_id"] = frame["building_id"].astype(str)
+        frame["history_value"] = pd.to_numeric(frame[metric], errors="coerce")
+        frame["history_source"] = frame.get("source", "hourly_meter")
+        frame["history_imputed"] = frame.get("imputed", False)
+        frame["history_category"] = None
+        frame["history_unit"] = {
+            "electricity_kwh": "kWh",
+            "water_litres": "L",
+            "solar_generation_kwh": "kWh",
+            "footfall": "people",
+        }[metric]
+    elif dataset == "daily_summary":
+        frame = daily_summary().copy()
+        frame["history_timestamp"] = pd.to_datetime(frame["date"], errors="coerce")
+        frame["history_building_id"] = frame["building_id"].astype(str)
+        frame["history_value"] = pd.to_numeric(frame[metric], errors="coerce")
+        frame["history_source"] = "daily_summary"
+        frame["history_imputed"] = False
+        frame["history_category"] = None
+        frame["history_unit"] = {
+            "occupancy_avg": "people",
+            "electricity_kwh": "kWh",
+            "water_litres": "L",
+            "solar_generation_kwh": "kWh",
+            "wet_organic_kg": "kg",
+            "dry_recyclable_kg": "kg",
+            "ewaste_kg": "kg",
+            "hazardous_kg": "kg",
+            "composted_kg": "kg",
+            "recycled_kg": "kg",
+            "contamination_pct": "%",
+            "landfill_kg": "kg",
+        }[metric]
+    elif dataset == "calendar":
+        frame = campus_calendar().copy()
+        frame["history_timestamp"] = pd.to_datetime(frame["date"], errors="coerce")
+        frame["history_building_id"] = None
+        frame["history_value"] = pd.to_numeric(frame[metric], errors="coerce")
+        frame["history_source"] = "calendar"
+        frame["history_imputed"] = False
+        frame["history_category"] = frame["event"].where(
+            frame["event"].notna() & frame["event"].astype(str).str.strip().ne(""),
+            frame["day_type"],
+        )
+        frame["history_unit"] = {
+            "avg_temp_c": "°C",
+            "rainfall_mm": "mm",
+            "humidity_pct": "%",
+        }[metric]
+    elif dataset in {"waste_train", "waste_test"}:
+        frame = (waste_train() if dataset == "waste_train" else waste_test()).copy()
+        frame["history_timestamp"] = pd.to_datetime(frame["timestamp"], errors="coerce")
+        frame["history_building_id"] = frame["building_id"].astype(str)
+        frame["history_value"] = pd.to_numeric(frame["weight_g"], errors="coerce")
+        frame["history_source"] = dataset
+        frame["history_imputed"] = False
+        frame["history_category"] = frame["category"] if "category" in frame else None
+        frame["history_unit"] = "g"
+        if category and "category" in frame:
+            frame = frame[frame["category"].astype(str) == category]
+    else:
+        frame = manual_logs().copy()
+        frame["history_timestamp"] = pd.to_datetime(frame["logged_at"], errors="coerce")
+        frame["history_building_id"] = frame["building"].map(normalize_building)
+        frame["history_value"] = pd.to_numeric(frame["value"], errors="coerce")
+        frame["history_source"] = "manual_log"
+        frame["history_imputed"] = False
+        frame["history_category"] = frame["stream"].astype(str)
+        frame["history_unit"] = frame["unit"].fillna("")
+        if manual_stream:
+            if manual_stream not in {"electricity", "water", "waste"}:
+                raise HTTPException(status_code=400, detail="Unsupported manual log stream")
+            frame = frame[frame["stream"].astype(str) == manual_stream]
+        else:
+            frame = frame[frame["stream"].astype(str).isin({"electricity", "water", "waste"})]
+
+    if building_id != "all":
+        frame = frame[frame["history_building_id"].astype(str) == building_id]
+    frame = frame.dropna(subset=["history_timestamp"]).sort_values("history_timestamp")
+
+    available_start = frame["history_timestamp"].min() if not frame.empty else None
+    available_end = frame["history_timestamp"].max() if not frame.empty else None
+    range_end = pd.Timestamp(end) if end else available_end
+    range_start = pd.Timestamp(start) if start else (
+        range_end - pd.Timedelta(hours=24) if range_end is not None else None
+    )
+    if range_start is not None and range_end is not None:
+        frame = frame[frame["history_timestamp"].between(range_start, range_end, inclusive="both")]
+    else:
+        frame = frame.iloc[0:0]
+
+    points = []
+    for _, row in frame.iterrows():
+        raw_value = row["history_value"]
+        value = float(raw_value) if pd.notna(raw_value) and math.isfinite(float(raw_value)) else None
+        row_building_id = row["history_building_id"]
+        points.append({
+            "ts": row["history_timestamp"].isoformat(),
+            "building_id": row_building_id,
+            "building_name": BUILDING_NAMES.get(row_building_id, "Campus" if dataset == "calendar" else "Unknown"),
+            "value": value,
+            "unit": str(row["history_unit"]),
+            "category": (
+                str(row["history_category"])
+                if pd.notna(row["history_category"]) and row["history_category"] is not None
+                else None
+            ),
+            "source": str(row["history_source"]),
+            "imputed": bool(row["history_imputed"]),
+        })
+
+    return {
+        "dataset": dataset,
+        "metric": metric,
+        "building_id": building_id,
+        "available_start": available_start.isoformat() if available_start is not None else None,
+        "available_end": available_end.isoformat() if available_end is not None else None,
+        "start": range_start.isoformat() if range_start is not None else None,
+        "end": range_end.isoformat() if range_end is not None else None,
+        "points": points,
+    }
 
 
 @app.get("/api/building/{building_id}/forecast")

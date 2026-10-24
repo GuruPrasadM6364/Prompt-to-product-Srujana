@@ -1,10 +1,13 @@
 // ============================================================
-// Circular Grid - Typed API Client
+// EcoFlow Campus - Typed API Client
 // ============================================================
 
 import type {
   CampusOverviewResponse,
   BuildingForecastResponse,
+  BuildingHistoryResponse,
+  CampusHistoryResponse,
+  HistoryDataset,
   ForecastStream,
   ForecastHorizon,
   AnomaliesResponse,
@@ -53,6 +56,35 @@ export const api = {
     horizon: ForecastHorizon = '6h'
   ): Promise<BuildingForecastResponse> {
     return get(`/building/${id}/forecast?stream=${stream}&horizon=${horizon}`);
+  },
+
+  getBuildingHistory(
+    id: string,
+    stream: string,
+    start?: string,
+    end?: string
+  ): Promise<BuildingHistoryResponse> {
+    const params = new URLSearchParams({ stream });
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
+    return get(`/building/${encodeURIComponent(id)}/history?${params.toString()}`);
+  },
+
+  getCampusHistory(
+    dataset: HistoryDataset,
+    metric: string,
+    buildingId: string,
+    start?: string,
+    end?: string,
+    category?: string,
+    manualStream?: string
+  ): Promise<CampusHistoryResponse> {
+    const params = new URLSearchParams({ dataset, metric, building_id: buildingId });
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
+    if (category) params.set('category', category);
+    if (manualStream) params.set('manual_stream', manualStream);
+    return get(`/campus/history?${params.toString()}`);
   },
 
   getAnomalies(): Promise<AnomaliesResponse> {

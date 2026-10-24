@@ -1,7 +1,7 @@
 """
 src/edge/reconciliation.py
 ==========================
-Central reconciliation engine for Circular Grid edge data.
+Central reconciliation engine for EcoFlow Campus edge data.
 
 Responsibilities
 ----------------
